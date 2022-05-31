@@ -13,7 +13,10 @@ class WebHandler(StreamHandler):
             self.loglist = loglist
             GLOBAL_LOGLIST = loglist
         else:
-            self.loglist = GLOBAL_LOGLIST
+            if loglist:
+                self.loglist = loglist
+            else:
+                self.loglist = GLOBAL_LOGLIST
 
     def emit(self, record):
         try:

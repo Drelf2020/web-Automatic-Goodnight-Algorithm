@@ -1,11 +1,71 @@
 from pywebio.output import *
+from pywebio.session import run_async
 from database import userDB, configDB
+from night import night
 from json import loads
+from bilibili_api import Credential
+from functools import partial
+from linkedlist import LinkedList
+from WebHandler import WebHandler
+from logging import DEBUG, Formatter, Logger
+import asyncio
+from pywebio.session import run_asyncio_coroutine as rac
+
+loglist = LinkedList(20)
+
+logger = Logger('TASK', DEBUG)
+handler = WebHandler(loglist=loglist)
+handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Task`: %(message)s", '%Y-%m-%d %H:%M:%S'))
+logger.addHandler(handler)
+
+tasks = {}
 
 
-def get_configs(cids):
+async def refresh_msg(cid):
+    global loglist
+    count = 0
+    sleeptime = 1
+    node = loglist.getTrueHead()
+    while True:
+        count += 1
+        if count >= 10/sleeptime:
+            count = 0
+        await asyncio.sleep(sleeptime)
+        while node.getNext():
+            node = node.getNext()
+            m = node.getValue()
+            put_markdown(m, sanitize=True, scope=f'scrollable_{cid}')
+
+
+async def on_click(btn: str, data):
+    username, cid, code = btn.split('.')
+    if not tasks.get(username):
+        cookies = userDB.query('SESSDATA,BILI_JCT,BUVID3', USERNAME=username)
+        credential = Credential(*cookies)
+        tasks[username] = {'credential': credential}
+    put_markdown(f'`{btn}`', scope=f'scrollable_{cid}')
+    if code == 'run':
+        task = tasks.get(username, {}).get(cid)
+        if not task:
+            task = night()
+            tasks[username][cid] = task
+            run_async(task.run(cid, logger, tasks[username]['credential'], data))
+            tasks[username]['msg'] = run_async(refresh_msg(cid))
+    elif code == 'close':
+        task = tasks.get(username, {}).get(cid)
+        if task:
+            await task.close()
+            del tasks[username][cid]
+        task = tasks.get(username, {}).get('msg')
+        if task:
+            if not task.closed():
+                task.close()
+            del tasks[username]['msg']
+
+
+
+def get_configs(username, cids):
     configs = configDB.query(cids)
-    print(configs)
     widgets = []
     for cid, name, owner, data in configs:
         js = loads(data)
@@ -26,9 +86,9 @@ def get_configs(cids):
                         'title': '输出终端',
                         'content': [
                             put_buttons([
-                                {'label': '▷', 'value': f'{cid}.run'},
-                                {'label': '■', 'color': 'danger', 'value': f'{cid}.exit'}
-                            ], onclick=lambda _: put_markdown(f'`{_}`', scope=f'scrollable_{_.split(".")[0]}')),
+                                {'label': '▷', 'value': f'{username}.{cid}.run'},
+                                {'label': '■', 'color': 'danger', 'value': f'{username}.{cid}.close'}
+                            ], onclick=partial(on_click, data=js)),
                             put_scrollable(put_scope(f'scrollable_{cid}'), height=200, keep_bottom=True)
                         ]
                     },
