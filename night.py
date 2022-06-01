@@ -13,7 +13,7 @@ class night:
 
     async def run(self, cid, logger, credential, data):
         '全自动晚安机'
-        logger.info(f'配置: {cid} 正在启动')
+        logger.info(f'配置: {cid} 正在启动.{cid}')
     
         self.listen_room = LiveDanmaku(int(data['roomid']))  # 接收弹幕, debug=True
         send_room = LiveRoom(int(data['roomid']), credential)  # 发送弹幕
@@ -51,15 +51,15 @@ class night:
         async def send_msg():
             '每 1 秒检测晚安弹幕密度 若超过阈值则随机发送晚安弹幕'
             nonlocal send_count
-            logger.info('晚安弹幕密度：'+str(total_danmuku//5)+' / s')
+            logger.info('晚安弹幕密度：'+str(total_danmuku/5)+' / s'+f'.{cid}')
             if total_danmuku >= 5*density:  # 密度超过 5t/s 则发送晚安
                 try:
                     word = goodnight[send_count % len(goodnight)]
                     send_count += 1
-                    logger.info(f'发送晚安弹幕：{word}')
+                    logger.info(f'发送晚安弹幕：{word}.{cid}')
                     await send_room.send_danmaku(Danmaku(word))
                 except Exception as e:
-                    logger.error('发送弹幕失败：'+str(e))
+                    logger.error(f'发送弹幕失败：{e}.{cid}')
 
         # 运行
         self.sched.start()

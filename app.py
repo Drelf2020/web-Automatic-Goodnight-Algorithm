@@ -24,7 +24,7 @@ logger.addHandler(handler)
 
 import account
 from bili import BILI
-from config import get_configs
+from config import get_configs, loglist as config_log
 from database import userDB
 
 LOGIN_COUNT = {}
@@ -170,6 +170,26 @@ async def index():
     userDB.update(username, IP=ip)
     await main()
 
+
+async def refresh_msg(loglist, scope=None):
+    count = 0
+    sleeptime = 1
+    node = loglist.getTrueHead()
+    while True:
+        count += 1
+        if count >= 10/sleeptime:
+            logger.debug('Heartbeat')
+            count = 0
+        await asyncio.sleep(sleeptime)
+        while node.getNext():
+            node = node.getNext()
+            if scope:
+                msg = node.getValue()
+                put_markdown(msg, sanitize=True, scope=scope)
+            else:
+                cid, msg = node.getValue()
+                put_markdown(msg, sanitize=True, scope=f'scrollable_{cid}')
+
     
 async def main():
     username = await account.get()
@@ -201,22 +221,8 @@ async def main():
         put_markdown('---')
     ] + get_configs(username, config), size='auto auto 1fr')
 
+    run_async(refresh_msg(config_log))
 
-async def refresh_msg():
-    global loglist
-    count = 0
-    sleeptime = 0.5
-    node = loglist.getTrueHead()
-    while True:
-        count += 1
-        if count >= 10/sleeptime:
-            logger.debug('Heartbeat')
-            count = 0
-        await asyncio.sleep(sleeptime)
-        while node.getNext():
-            node = node.getNext()
-            m = node.getValue()
-            put_markdown(m, sanitize=True, scope='admin_scrollable')
 
 async def admin():
     username = await account.get()
@@ -224,7 +230,7 @@ async def admin():
         put_markdown('`Admin权限不足`')
         return
     put_scrollable(put_scope('admin_scrollable'), height=400, keep_bottom=True)
-    task = run_async(refresh_msg())
+    task = run_async(refresh_msg(loglist, 'admin_scrollable'))
     while True:
         cmd = await input('Command')
         logger.info(cmd)

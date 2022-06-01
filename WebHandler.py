@@ -21,8 +21,12 @@ class WebHandler(StreamHandler):
     def emit(self, record):
         try:
             msg = self.format(record)
+            cid = msg.split('.')[-1]
+            if cid.isdigit():
+                self.loglist.append((cid, msg.replace(f'.{cid}', '')))
+            else:
+                self.loglist.append(msg)
             stream = self.stream
-            self.loglist.append(msg)
             stream.write(msg + self.terminator)
             self.flush()
         except Exception:

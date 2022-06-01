@@ -14,11 +14,13 @@ class LinkedList:
         def setNext(self, new_next):
             self.__next = new_next
 
-    def __init__(self, maxLength: int = 100):
+    def __init__(self, maxLength: int = 100, data=None):
         self.__head = None
         self.__tail = None
         self.__length = 0
         self.__maxLength = maxLength
+        if data:
+            self.append(data)
 
     def getHead(self):
         return self.__head
