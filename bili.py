@@ -3,7 +3,7 @@ import qrcode
 import asyncio
 import account
 from pywebio.output import *
-from pywebio.session import run_asyncio_coroutine as rac, go_app, run_js, info as sif
+from pywebio.session import run_asyncio_coroutine as rac, go_app
 from bilibili_api.live import Danmaku, LiveRoom
 from bilibili_api import Credential, user
 from logging import DEBUG, Formatter, Logger

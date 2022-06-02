@@ -7,12 +7,12 @@ from bilibili_api import Credential
 from functools import partial
 from linkedlist import LinkedList
 from WebHandler import WebHandler
-from logging import INFO, Formatter, Logger
+from logging import DEBUG, Formatter, Logger
 
 
 loglist = LinkedList(20, (0, 'loglist启动中'))
 
-logger = Logger('TASK', INFO)
+logger = Logger('TASK', DEBUG)
 handler = WebHandler(loglist=loglist, dot=True)
 handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Task`: %(message)s", '%Y-%m-%d %H:%M:%S'))
 logger.addHandler(handler)
@@ -26,7 +26,6 @@ async def on_click(btn: str, data):
         cookies = userDB.query('SESSDATA,BILI_JCT,BUVID3', USERNAME=username)
         credential = Credential(*cookies)
         tasks[username] = {'credential': credential}
-    # put_markdown(f'`{btn}`', scope=f'scrollable_{cid}')
     if code == 'run':
         task = tasks.get(username, {}).get(cid)
         if not task:
@@ -59,10 +58,14 @@ def get_configs(username, cids):
                     {
                         'title': '输出终端',
                         'content': [
-                            put_buttons([
-                                {'label': '▷', 'value': f'{username}.{cid}.run'},
-                                {'label': '■', 'color': 'danger', 'value': f'{username}.{cid}.close'}
-                            ], onclick=partial(on_click, data=js)),
+                            put_row([
+                                put_buttons([
+                                    {'label': '▷', 'value': f'{username}.{cid}.run'},
+                                    {'label': '■', 'color': 'danger', 'value': f'{username}.{cid}.close'}
+                                ], onclick=partial(on_click, data=js)),
+                                None,
+                                put_scope(f'scrollable_{cid}_hb')
+                            ], size='auto 1fr auto'),
                             put_scrollable(put_scope(f'scrollable_{cid}'), height=200, keep_bottom=True)
                         ]
                     },

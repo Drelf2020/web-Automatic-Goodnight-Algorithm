@@ -8,11 +8,14 @@ import re
 class night:
 
     def __init__(self, cid, logger, credential, data):
+        self.logger = logger
+        self.cid = cid
         run_async(self.run(cid, logger, credential, data))
 
     async def close(self):
         self.sched.shutdown()
         await rac(self.listen_room.disconnect())
+        self.logger.info(f'配置: {self.cid} 已经停止.{self.cid}')
 
     async def run(self, cid, logger, credential, data):
         '全自动晚安机'
@@ -49,17 +52,18 @@ class night:
                     total_danmuku -= danmuku_list.pop(0)  # 从总弹幕数总减去 删去了的时间戳内的弹幕数
             if regex.search(info[1]):
                 count_danmuku += 1
+                logger.info(f'收到弹幕：{info[1]}.{cid}')
 
         @self.sched.scheduled_job('interval', id='send_job', seconds=data['send_rate'])
         async def send_msg():
-            '每 1 秒检测晚安弹幕密度 若超过阈值则随机发送晚安弹幕'
+            '每 1 秒检测弹幕密度 若超过阈值则随机发送弹幕'
             nonlocal send_count
-            logger.info('晚安弹幕密度：'+str(total_danmuku/5)+' / s'+f'.{cid}')
+            logger.debug('弹幕密度：`'+str(total_danmuku/5)+' / s`'+f'.{cid}')
             if total_danmuku >= 5*density:  # 密度超过 5t/s 则发送晚安
                 try:
                     word = goodnight[send_count % len(goodnight)]
                     send_count += 1
-                    logger.info(f'发送晚安弹幕：{word}.{cid}')
+                    logger.info(f'发送弹幕：{word}.{cid}')
                     await send_room.send_danmaku(Danmaku(word))
                 except Exception as e:
                     logger.error(f'发送弹幕失败：{e}.{cid}')

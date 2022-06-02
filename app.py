@@ -192,7 +192,11 @@ async def refresh_msg(loglist, scope=None):
                     put_markdown(msg, sanitize=True, scope=scope)
                 else:
                     cid, msg = node.getValue()
-                    put_markdown(msg, sanitize=True, scope=f'scrollable_{cid}')
+                    if 'DEBUG' in msg:
+                        clear(f'scrollable_{cid}_hb')
+                        put_markdown(msg, sanitize=True, scope=f'scrollable_{cid}_hb').style('border-bottom: none')
+                    else:
+                        put_markdown(msg, sanitize=True, scope=f'scrollable_{cid}')
             except Exception as e:
                 print('error', msg)
                 toast(msg, 5, color='error')
@@ -214,19 +218,22 @@ async def main():
 
     uid, config, *cookies = userDB.query(cmd='UID,CONFIG,SESSDATA,BILI_JCT,BUVID3', USERNAME=username)
     local.bili = BILI(uid, cookies)
-
-    put_column([
-        put_row([
-            put_image(face, format='png', height='100px').onclick(bind),
-            put_column([
-                None,
-                put_markdown(f'## 😚欢迎你呀，<font color="{color}">{name}🥳</font>').style('border-bottom: none'),
+    put_tabs([
+        {'title': '个人主页', 'content': 
+        put_column([
+            put_row([
+                put_image(face, format='png', height='100px').onclick(bind),
+                put_column([
+                    None,
+                    put_markdown(f'## 😚欢迎你呀，<font color="{color}">{name}🥳</font>').style('border-bottom: none'),
+                    None
+                ]),
                 None
-            ]),
-            None
-        ], size='auto auto 1fr'),  # .style('border-style: solid;'),
-        put_markdown('---')
-    ] + get_configs(username, config), size='auto auto 1fr')
+            ], size='auto auto 1fr'),  # .style('border-style: solid;'),
+            put_markdown('---')
+        ] + get_configs(username, config), size='auto auto 1fr')},
+        {'title': '网页源码', 'content': code()}
+    ]).style('border:none;')
 
     run_async(refresh_msg(config_log))
 
@@ -255,15 +262,17 @@ async def admin():
 
 
 def code():
-    put_markdown('# 😎你知道我长什么样 来找我吧')
+    widgets = []
+    widgets.append(put_markdown('# 😎你知道我长什么样 来找我吧'))
     for root, folders, files in os.walk('.'):
         for file in files:
             if file.split('.')[-1] == 'py':
                 with open(file, 'r', encoding='utf-8') as fp:
                     code_str = fp.read()
-                    put_collapse(file, put_code(code_str, 'python'))
+                    widgets.append(put_collapse(file, put_code(code_str, 'python')))
         break
+    return widgets
 
 
 if __name__ == '__main__':
-    start_server([index, admin, code], port=2434, auto_open_webbrowser=True, debug=True)
+    start_server([index, admin], port=2434, auto_open_webbrowser=True, debug=True)
