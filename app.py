@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging import DEBUG, Formatter, Logger
 
 import requests
@@ -6,10 +7,11 @@ from pywebio import start_server
 from pywebio.input import *
 from pywebio.io_ctrl import Output
 from pywebio.output import *
-from pywebio.session import go_app, eval_js, run_js
+from pywebio.session import eval_js, go_app
 from pywebio.session import info as sif
 from pywebio.session import local, run_async
 from pywebio.session import run_asyncio_coroutine as rac
+from pywebio.session import run_js
 
 import exface
 from linkedlist import LinkedList
@@ -24,7 +26,8 @@ logger.addHandler(handler)
 
 import account
 from bili import BILI
-from config import get_configs, loglist as config_log
+from config import get_configs
+from config import loglist as config_log
 from database import userDB
 
 LOGIN_COUNT = {}
@@ -182,13 +185,17 @@ async def refresh_msg(loglist, scope=None):
             count = 0
         await asyncio.sleep(sleeptime)
         while node.getNext():
-            node = node.getNext()
-            if scope:
-                msg = node.getValue()
-                put_markdown(msg, sanitize=True, scope=scope)
-            else:
-                cid, msg = node.getValue()
-                put_markdown(msg, sanitize=True, scope=f'scrollable_{cid}')
+            try:
+                node = node.getNext()
+                if scope:
+                    msg = node.getValue()
+                    put_markdown(msg, sanitize=True, scope=scope)
+                else:
+                    cid, msg = node.getValue()
+                    put_markdown(msg, sanitize=True, scope=f'scrollable_{cid}')
+            except Exception as e:
+                print('error', msg)
+                toast(msg, 5, color='error')
 
     
 async def main():
@@ -244,8 +251,19 @@ async def admin():
             logger.error(e)
             toast(e, 5)
     task.close()
-    run_js('location.reload();')
+    go_app('index', False)
+
+
+def code():
+    put_markdown('# 😎你知道我长什么样 来找我吧')
+    for root, folders, files in os.walk('.'):
+        for file in files:
+            if file.split('.')[-1] == 'py':
+                with open(file, 'r', encoding='utf-8') as fp:
+                    code_str = fp.read()
+                    put_collapse(file, put_code(code_str, 'python'))
+        break
 
 
 if __name__ == '__main__':
-    start_server([index, admin], port=2434, auto_open_webbrowser=True, debug=True)
+    start_server([index, admin, code], port=2434, auto_open_webbrowser=True, debug=True)

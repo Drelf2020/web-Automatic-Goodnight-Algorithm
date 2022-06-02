@@ -13,7 +13,7 @@ from logging import INFO, Formatter, Logger
 loglist = LinkedList(20, (0, 'loglist启动中'))
 
 logger = Logger('TASK', INFO)
-handler = WebHandler(loglist=loglist)
+handler = WebHandler(loglist=loglist, dot=True)
 handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Task`: %(message)s", '%Y-%m-%d %H:%M:%S'))
 logger.addHandler(handler)
 
@@ -26,14 +26,11 @@ async def on_click(btn: str, data):
         cookies = userDB.query('SESSDATA,BILI_JCT,BUVID3', USERNAME=username)
         credential = Credential(*cookies)
         tasks[username] = {'credential': credential}
-    put_markdown(f'`{btn}`', scope=f'scrollable_{cid}')
+    # put_markdown(f'`{btn}`', scope=f'scrollable_{cid}')
     if code == 'run':
         task = tasks.get(username, {}).get(cid)
         if not task:
-            task = night()
-            tasks[username][cid] = task
-            run_async(task.run(cid, logger, tasks[username]['credential'], data))
-            # tasks[username]['msg'] = run_async(refresh_msg(cid))
+            tasks[username][cid] = night(cid, logger, tasks[username]['credential'], data)
     elif code == 'close':
         task = tasks.get(username, {}).get(cid)
         if task:

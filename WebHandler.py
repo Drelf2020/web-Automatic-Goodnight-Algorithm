@@ -1,13 +1,13 @@
 from logging import StreamHandler
-from pywebio.output import put_markdown
 
 
 GLOBAL_LOGLIST = None
 
 class WebHandler(StreamHandler):
 
-    def __init__(self, stream=None, loglist=None):
+    def __init__(self, stream=None, loglist=None, dot=False):
         super().__init__(stream)
+        self.dot = dot
         global GLOBAL_LOGLIST
         if not GLOBAL_LOGLIST:
             self.loglist = loglist
@@ -22,7 +22,7 @@ class WebHandler(StreamHandler):
         try:
             msg = self.format(record)
             cid = msg.split('.')[-1]
-            if cid.isdigit():
+            if self.dot:
                 self.loglist.append((cid, msg.replace(f'.{cid}', '')))
             else:
                 self.loglist.append(msg)

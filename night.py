@@ -1,11 +1,14 @@
 from bilibili_api.live import LiveDanmaku, LiveRoom, Danmaku
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pywebio.output import *
-from pywebio.session import run_asyncio_coroutine as rac
+from pywebio.session import run_asyncio_coroutine as rac, run_async
 import re
 
 
 class night:
+
+    def __init__(self, cid, logger, credential, data):
+        run_async(self.run(cid, logger, credential, data))
 
     async def close(self):
         self.sched.shutdown()

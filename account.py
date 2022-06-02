@@ -11,7 +11,8 @@ handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `User`: %(message)
 logger.addHandler(handler)
 
 
-SECRET = "encryption salt value"
+with open('key.txt', 'r', encoding='utf-8') as fp:
+    SECRET = fp.read()
 
 async def get():
     token = await eval_js("localStorage.getItem(key)", key='token')  # get token from user's web browser

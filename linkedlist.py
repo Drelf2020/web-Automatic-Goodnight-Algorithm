@@ -46,8 +46,11 @@ class LinkedList:
 
     # pop删除链表中的第一个元素
     def pop(self):
-        self.__length -= 1
-        self.__head = self.__head.getNext()
+        if self.__length > 0:
+            self.__length -= 1
+            temp = self.__head
+            self.__head = self.__head.getNext()
+            return temp
     
     def print(self):
         current_node = self.__head
