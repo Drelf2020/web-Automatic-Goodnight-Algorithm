@@ -37,15 +37,15 @@ class DataBase:
         self.save()
 
     def update(self, location: dict, **kwargs):
-        sql = f'UPDATE {self.table} SET ' + ', '.join([f'{k}="{v}"' for k, v in kwargs.items()])
-        sql += ' WHERE ' + ' AND '.join([f'{k}="{v}"' for k, v in location.items()])
+        sql = f'UPDATE {self.table} SET ' + ', '.join([f"{k}='{v}'" for k, v in kwargs.items()])
+        sql += ' WHERE ' + ' AND '.join([f"{k}='{v}'" for k, v in location.items()])
         cursor.execute(sql)
         self.save()
 
     def query(self, cmd='*', all=False, **kwargs):
         sql = f'SELECT {cmd} FROM {self.table}'
         if kwargs:
-            sql += ' WHERE ' + ' AND '.join([f'{k}="{v}"' for k, v in kwargs.items()])
+            sql += ' WHERE ' + ' AND '.join([f"{k}='{v}'" for k, v in kwargs.items()])
         if all:
             resp = cursor.execute(sql).fetchall()
         else:
@@ -79,7 +79,7 @@ class ConfigDB(DataBase):
     
     def query(self, cids: str):
         if cids:
-            return super().query('*', all=True, CID=cids.replace(',', '" OR CID="'))
+            return super().query('*', all=True, CID=cids.replace(',', "' OR CID='"))
         else:
             return []
 

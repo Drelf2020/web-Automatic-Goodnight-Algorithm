@@ -1,8 +1,9 @@
 from pywebio.output import *
-from pywebio.session import run_async
+from pywebio.input import textarea
+from pywebio.session import run_js
 from database import userDB, configDB
 from night import night
-from json import loads
+from json import loads, dumps
 from bilibili_api import Credential
 from functools import partial
 from linkedlist import LinkedList
@@ -37,6 +38,14 @@ async def on_click(btn: str, data):
             del tasks[username][cid]
 
 
+async def set_config(cid, config):
+    new_config = await textarea('编辑配置文件', rows=20, code={}, value=config)
+    js = loads(new_config)
+    new_config = dumps(js, indent=4, ensure_ascii=False)
+    configDB.update({'CID': cid}, DATA=new_config)
+    run_js('location.reload();')
+
+
 def get_configs(username, cids):
     configs = configDB.query(cids)
     widgets = []
@@ -69,7 +78,10 @@ def get_configs(username, cids):
                             put_scrollable(put_scope(f'scrollable_{cid}'), height=200, keep_bottom=True)
                         ]
                     },
-                    {'title': '源代码', 'content': put_code(data, 'json')},
+                    {'title': '源代码', 'content': [
+                        put_code(data, 'json'),
+                        put_button('编辑配置', onclick=partial(set_config, cid=cid, config=data))
+                    ]},
                 ]).style('border:none;')
             ])
         )
