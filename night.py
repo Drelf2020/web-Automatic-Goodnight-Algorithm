@@ -3,6 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pywebio.output import *
 from pywebio.session import run_asyncio_coroutine as rac, run_async
 import re
+import datetime
 
 
 class night:
@@ -21,7 +22,7 @@ class night:
         '全自动晚安机'
         logger.info(f'配置: {cid} 正在启动.{cid}')
     
-        self.listen_room = LiveDanmaku(int(data['roomid']))  # 接收弹幕, debug=True
+        self.listen_room = LiveDanmaku(int(data['roomid']), credential=credential, debug=True)  # 接收弹幕
         send_room = LiveRoom(int(data['roomid']), credential)  # 发送弹幕
         self.sched = AsyncIOScheduler()  # 定时检测密度的任务调度器
 
@@ -30,7 +31,14 @@ class night:
         total_danmuku = 0  # 统计一段时间总晚安弹幕
         last_time = 0  # 上一次储存弹幕时的时间戳
 
-        regex = '(' + ')|('.join(data['listening_words']) + ')'
+        
+        def cnm怎么正则也要转义啊(word):
+            for 特殊字符 in '.^$*+\[]|{}()?':
+                word = word.replace(特殊字符, f'\\{特殊字符}')
+            return word
+
+        words = [cnm怎么正则也要转义啊(word) for word in data['listening_words']]
+        regex = '(' + ')|('.join(words) + ')'
         regex = re.compile(regex)  # 正则监听词
         density = data['limited_density']
 
@@ -42,6 +50,7 @@ class night:
             '接收弹幕并计算密度'
             nonlocal danmuku_list, count_danmuku, total_danmuku, last_time
             info = event['data']['info']
+            print(info[1])
             time = info[9]['ts']  # 时间戳
             if time > last_time:
                 last_time = time
@@ -53,6 +62,8 @@ class night:
             if regex.search(info[1]):
                 count_danmuku += 1
                 logger.info(f'收到弹幕：{info[1]}.{cid}')
+        # self.listen_room.add_event_listener('DANMU_MSG', on_danmaku)
+
 
         @self.sched.scheduled_job('interval', id='send_job', seconds=data['send_rate'])
         async def send_msg():
@@ -67,6 +78,12 @@ class night:
                     await send_room.send_danmaku(Danmaku(word))
                 except Exception as e:
                     logger.error(f'发送弹幕失败：{e}.{cid}')
+
+        @self.sched.scheduled_job('interval', id='reconnection', seconds=120)  # , next_run_time=datetime.datetime.now()
+        async def reconnection():
+            await self.listen_room.disconnect()
+            await self.listen_room.connect()
+
 
         # 运行
         self.sched.start()

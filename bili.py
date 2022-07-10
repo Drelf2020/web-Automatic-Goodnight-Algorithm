@@ -6,12 +6,11 @@ from pywebio.output import *
 from pywebio.session import run_asyncio_coroutine as rac, go_app
 from bilibili_api.live import Danmaku, LiveRoom
 from bilibili_api import Credential, user
-from logging import DEBUG, Formatter, Logger
-from WebHandler import WebHandler
+from logging import DEBUG, Formatter, Logger, StreamHandler
 
 
 logger = Logger('BILI', DEBUG)
-handler = WebHandler()
+handler = StreamHandler()
 handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Bili`: %(message)s", '%Y-%m-%d %H:%M:%S'))
 logger.addHandler(handler)
 

@@ -6,15 +6,11 @@ from night import night
 from json import loads, dumps
 from bilibili_api import Credential
 from functools import partial
-from linkedlist import LinkedList
-from WebHandler import WebHandler
-from logging import DEBUG, Formatter, Logger
+from logging import DEBUG, Formatter, Logger, StreamHandler
 
-
-loglist = LinkedList(20, (0, 'loglist启动中'))
 
 logger = Logger('TASK', DEBUG)
-handler = WebHandler(loglist=loglist, dot=True)
+handler = StreamHandler()
 handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Task`: %(message)s", '%Y-%m-%d %H:%M:%S'))
 logger.addHandler(handler)
 
