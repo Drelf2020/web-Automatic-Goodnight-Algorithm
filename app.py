@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import os
 from logging import DEBUG, Formatter, Logger, StreamHandler
 
@@ -13,7 +13,7 @@ from pywebio.session import local, run_async
 from pywebio.session import run_asyncio_coroutine as rac
 from pywebio.session import run_js
 
-config(js_code='''$("body").prepend('<nav class="navbar navbar-dark bg-dark"><div class="container"><a href="/?app=code" class="router-link-active router-link-exact-active navbar-brand">😎</a><a href="/"><img src="https://s1.ax1x.com/2022/07/11/jyaevn.png" height="40px"></a><a href="/?app=admin" class="router-link-active router-link-exact-active navbar-brand">🛒</a></div></nav>')''')
+config(js_code='''$("body").prepend('<nav class="navbar navbar-dark bg-dark"><div class="container"><a href="/night/?app=code" class="router-link-active router-link-exact-active navbar-brand">😎</a><a href="/night"><img src="https://s1.ax1x.com/2022/07/11/jyaevn.png" height="40px"></a><a href="/night/?app=admin" class="router-link-active router-link-exact-active navbar-brand">🛒</a></div></nav>')''')
 
 import account
 import exface
@@ -60,15 +60,15 @@ async def new_config(username: str):
     config = userDB.query('CONFIG', USERNAME=username).split(',')
     next_cid = str(configDB.get_last_cid() + 1)
     ans = await select('请选择添加配置方式', ['自动导入 配置文件', '手动填写 配置文件', '填写 json 配置文件', '上传 json 配置文件'])
-    match ans:
-        case '自动导入 配置文件':
+    while True:
+        if ans == '自动导入 配置文件':
             cid = str(await input('请输入配置文件编号', NUMBER, required=True))
             if cid not in config:
                 userDB.update(username, CONFIG=','.join(config+[cid]))
             run_js('location.reload();')
-        case '手动填写 配置文件':
+        elif ans == '手动填写 配置文件':
             put_markdown('#### 摆了没做嘻嘻')
-        case '填写 json 配置文件':
+        elif ans == '填写 json 配置文件':
             inputs = await input_group(
                 label='填写配置文件',
                 inputs=[
@@ -83,7 +83,7 @@ async def new_config(username: str):
                 run_js('location.reload();')
             except Exception as e:
                 toast(f'配置文件错误：{e}', 3, color='error')
-        case '上传 json 配置文件':
+        elif ans == '上传 json 配置文件':
             file = await file_upload('上传配置文件，将以文件名作为展示配置名', accept=['.json', '.txt'],max_size='5K', required=True, help_text='请上传不大于 5Kb 以 .json 或 .txt 后缀的文件')
             try:
                 new_config = dumps(loads(file['content']), indent=4, ensure_ascii=False)
@@ -92,14 +92,17 @@ async def new_config(username: str):
                 run_js('location.reload();')
             except Exception as e:
                 toast(f'配置文件错误：{e}', 3, color='error')
+        break
 
 
 async def location(ipv6: str):
     if not ipv6:
         return
+    session = aiohttp.ClientSession(headers=Headers)
     BASEURL = 'http://ip.zxinc.org/api.php?type=json'
-    r = await rac(SESSION.get(BASEURL, params={'ip': ipv6}))
-    return (await rac(r.json(content_type='text/json')))['data']['location'].replace('\t', ' ')
+    r = await rac(session.get(BASEURL, params={'ip': ipv6}))
+    await rac(session.close())
+    return (await r.json(content_type='text/json'))['data']['location'].replace('\t', ' ')
 
 
 async def bind():
@@ -163,7 +166,7 @@ async def bind():
         **bili.cookies
     )
 
-    image = await exface.exface(SESSION, info.get('face'), info.get('pendant', {}).get('image'))
+    image = await exface.exface(info.get('face'), info.get('pendant', {}).get('image'))
     image.save(f'images/{bili.uid}.png')
 
 async def index():
@@ -246,7 +249,7 @@ async def main(username: str, ip: str):
             face = fp.read()
     except Exception as e:
         logger.error(f'加载头像错误: {e}')
-        face = await exface.exface(SESSION, face, pendant)
+        face = await exface.exface(face, pendant)
         face.save(f'images/{uid}.png')
 
     uid, config, *cookies = userDB.query(cmd='UID,CONFIG,SESSDATA,BILI_JCT,BUVID3', USERNAME=username)
@@ -254,7 +257,7 @@ async def main(username: str, ip: str):
 
     while await rac(local.bili.check()) in [-400, -101, -111]:
         await bind()
-
+    print('123456')
     put_column([
         put_row([
             put_image(face, format='png', height='100px').onclick(bind),

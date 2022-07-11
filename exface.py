@@ -1,9 +1,18 @@
 from PIL import Image, ImageDraw
 from io import BytesIO
 from pywebio.session import run_asyncio_coroutine as rac
+import aiohttp
 
+Headers = {
+    'Connection': 'keep-alive',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
+    'Accept-Encoding': 'gzip, deflate',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36'
+}
 
-async def exface(session, face, pendant):
+async def exface(face, pendant):
+    session = aiohttp.ClientSession(headers=Headers)
     # 头像
     if isinstance(face, str):
         response = await rac(session.get(face))  # 请求图片
@@ -23,6 +32,7 @@ async def exface(session, face, pendant):
         try:
             r, g, b, a = pd.split()  # 分离alpha通道
             image.paste(pd, (0, 0), mask=a)  # 粘贴至背景
+            await rac(session.close())
             return image
         except Exception:
             pendant = None
@@ -38,6 +48,7 @@ async def exface(session, face, pendant):
         w, h = image.size
         bg = Image.new('RGBA', (int(1.25*w), int(1.25*h)), (0, 0, 0, 0))
         bg.paste(image, (int((1.25-1)/2*w), int((1.25-1)/2*h)))
+        await rac(session.close())
         return bg
 
 
