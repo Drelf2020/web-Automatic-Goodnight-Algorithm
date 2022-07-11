@@ -3,28 +3,28 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pywebio.output import *
 from pywebio.session import run_asyncio_coroutine as rac, run_async
 import re
-import datetime
+import time
+from linkedlist import LinkedList
 
+t2s = lambda: time.strftime('`%H:%M:%S` ', time.localtime(time.time()))
 
 class night:
 
-    def __init__(self, cid, logger, credential, data):
-        self.logger = logger
+    def __init__(self, cid, loglist: LinkedList, credential, data):
         self.cid = cid
-        run_async(self.run(cid, logger, credential, data))
+        run_async(self.run(cid, loglist, credential, data))
 
     async def close(self):
         self.sched.shutdown()
         await rac(self.listen_room.disconnect())
-        self.logger.info(f'配置: {self.cid} 已经停止.{self.cid}')
+        put_markdown(f'{t2s()}配置已经停止', scope=f'scrollable_{self.cid}')
 
-    async def run(self, cid, logger, credential, data):
+    async def run(self, cid: int, loglist: LinkedList, credential: dict, data: dict):
         '全自动晚安机'
-        logger.info(f'配置: {cid} 正在启动.{cid}')
-    
-        self.listen_room = LiveDanmaku(int(data['roomid']), credential=credential, debug=True)  # 接收弹幕
+        put_markdown(f'{t2s()}配置正在启动', scope=f'scrollable_{cid}')
+        self.listen_room = LiveDanmaku(int(data['roomid']), credential=credential)  # 接收弹幕, debug=True
         send_room = LiveRoom(int(data['roomid']), credential)  # 发送弹幕
-        self.sched = AsyncIOScheduler()  # 定时检测密度的任务调度器
+        self.sched = AsyncIOScheduler(timezone='Asia/Shanghai')  # 定时检测密度的任务调度器
 
         danmuku_list = []  # 储存一段时间晚安弹幕
         count_danmuku = 0  # 储存某时间点晚安弹幕
@@ -50,7 +50,6 @@ class night:
             '接收弹幕并计算密度'
             nonlocal danmuku_list, count_danmuku, total_danmuku, last_time
             info = event['data']['info']
-            print(info[1])
             time = info[9]['ts']  # 时间戳
             if time > last_time:
                 last_time = time
@@ -61,29 +60,26 @@ class night:
                     total_danmuku -= danmuku_list.pop(0)  # 从总弹幕数总减去 删去了的时间戳内的弹幕数
             if regex.search(info[1]):
                 count_danmuku += 1
-                logger.info(f'收到弹幕：{info[1]}.{cid}')
-        # self.listen_room.add_event_listener('DANMU_MSG', on_danmaku)
-
+                # loglist.append((cid, f'{t2s()}收到弹幕：{info[1]}'))
 
         @self.sched.scheduled_job('interval', id='send_job', seconds=data['send_rate'])
         async def send_msg():
             '每 1 秒检测弹幕密度 若超过阈值则随机发送弹幕'
             nonlocal send_count
-            logger.debug('弹幕密度：`'+str(total_danmuku/5)+' / s`'+f'.{cid}')
+            loglist.append((cid, t2s()+'弹幕密度 `'+str(total_danmuku/5)+' / s`'))
             if total_danmuku >= 5*density:  # 密度超过 5t/s 则发送晚安
                 try:
                     word = goodnight[send_count % len(goodnight)]
                     send_count += 1
-                    logger.info(f'发送弹幕：{word}.{cid}')
+                    loglist.append((cid, f'{t2s()}发送弹幕：{word}'))
                     await send_room.send_danmaku(Danmaku(word))
                 except Exception as e:
-                    logger.error(f'发送弹幕失败：{e}.{cid}')
+                    loglist.append((cid, f'{t2s()}发送弹幕失败：{e}'))
 
-        @self.sched.scheduled_job('interval', id='reconnection', seconds=120)  # , next_run_time=datetime.datetime.now()
+        @self.sched.scheduled_job('interval', id='reconnection', hours=0.5)  # , next_run_time=datetime.datetime.now()
         async def reconnection():
             await self.listen_room.disconnect()
             await self.listen_room.connect()
-
 
         # 运行
         self.sched.start()

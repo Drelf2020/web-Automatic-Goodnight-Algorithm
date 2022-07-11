@@ -43,7 +43,7 @@ class BILI:
         '通过扫描二维码模拟登录B站并获取cookies'
         
         if self.running:
-            print('为什么不return')
+            logger.debug('为什么不return')
             return
         else:
             self.running = True
@@ -87,7 +87,6 @@ class BILI:
                 cookies = session.cookie_jar.filter_cookies("https://message.bilibili.com")
                 break
 
-        # await rac(session.close())
         close_popup()
 
         if self.running:
@@ -101,9 +100,11 @@ class BILI:
 
     async def check(self):
         try:
-            return await LiveRoom(14703541, self.credential).send_danmaku(Danmaku('__check__()'))
+            return await LiveRoom(14703541, self.credential).send_danmaku(Danmaku('check()'))
         except Exception as e:
-            print(e.code, e.msg)
+            logger.debug(f'{e.code} {e.msg}')
+            if e.code != 10031:
+                self.uid = None
             return e.code
 
     async def get_info(self):

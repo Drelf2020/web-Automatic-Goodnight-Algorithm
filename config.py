@@ -1,18 +1,11 @@
 from pywebio.output import *
 from pywebio.input import textarea
-from pywebio.session import run_js
+from pywebio.session import run_js, local
 from database import userDB, configDB
 from night import night
 from json import loads, dumps
 from bilibili_api import Credential
 from functools import partial
-from logging import DEBUG, Formatter, Logger, StreamHandler
-
-
-logger = Logger('TASK', DEBUG)
-handler = StreamHandler()
-handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Task`: %(message)s", '%Y-%m-%d %H:%M:%S'))
-logger.addHandler(handler)
 
 tasks = {}
 
@@ -23,12 +16,11 @@ async def on_click(btn: str, data):
         cookies = userDB.query('SESSDATA,BILI_JCT,BUVID3', USERNAME=username)
         credential = Credential(*cookies)
         tasks[username] = {'credential': credential}
+    task = tasks[username].get(cid)
     if code == 'run':
-        task = tasks.get(username, {}).get(cid)
         if not task:
-            tasks[username][cid] = night(cid, logger, tasks[username]['credential'], data)
+            tasks[username][cid] = night(cid, local.loglist, tasks[username]['credential'], data)
     elif code == 'close':
-        task = tasks.get(username, {}).get(cid)
         if task:
             await task.close()
             del tasks[username][cid]
@@ -74,9 +66,8 @@ def get_configs(username, cids):
                             put_scrollable(put_scope(f'scrollable_{cid}'), height=200, keep_bottom=True)
                         ]
                     },
-                    {'title': '源代码', 'content': [
-                        put_code(data, 'json'),
-                        put_button('编辑配置', onclick=partial(set_config, cid=cid, config=data))
+                    {'title': '源代码', 'content': [put_code(data, 'json')] + [
+                        put_button('编辑配置', onclick=partial(set_config, cid=cid, config=data)) if username == owner else put_scope(str(cid))
                     ]},
                 ]).style('border:none;')
             ])

@@ -1,6 +1,8 @@
-# web-Automatic-Goodnight-Algorithm
- 基于 pywebio 的网页版全自动晚安机
+# 😎web-Automatic-Goodnight-Algorithm
 
-怎么用？自己部署啊。或者来看看我部署的。
+基于 Pywebio 的网页版全托管独轮车 [https://api.nana7mi.link/night](https://api.nana7mi.link/night)
 
-![image](https://user-images.githubusercontent.com/41439182/171025070-a3ed5835-5323-408b-8a82-86080e17ccf5.png)
+*修改了外部库 bilibili-api 中 live.py 的部分代码*
+
+[![jc7PX9.md.png](https://s1.ax1x.com/2022/07/12/jc7PX9.md.png)](https://imgtu.com/i/jc7PX9)
+

@@ -26,8 +26,6 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS CONFIG(
 
 
 class DataBase:
-    '''USER: UID, USERNAME, FACE, COLOR, COOKIES, CONFIG
-    CONFIG: UID, OWNER, DATA'''
     def __init__(self, table: str):
         self.table = table if table else 'USER'
 
@@ -82,6 +80,9 @@ class ConfigDB(DataBase):
             return super().query('*', all=True, CID=cids.replace(',', "' OR CID='"))
         else:
             return []
+
+    def get_last_cid(self):
+        return max(super().query('CID', all=True))[0]
 
 
 userDB = UserDB()
