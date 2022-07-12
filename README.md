@@ -4,5 +4,7 @@
 
 *修改了外部库 bilibili-api 中 live.py 的部分代码*
 
+*已经给 bilibili-api 提交 Pull requests 了*
+
 [![jc7PX9.md.png](https://s1.ax1x.com/2022/07/12/jc7PX9.md.png)](https://imgtu.com/i/jc7PX9)
 
