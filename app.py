@@ -34,7 +34,6 @@ Headers = {
     'Upgrade-Insecure-Requests': '1',
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36'
 }
-SESSION = aiohttp.ClientSession(headers=Headers)
 loglist = LinkedList(20, (-1, 'Hello LinkedList'))
 
 
@@ -60,39 +59,37 @@ async def new_config(username: str):
     config = userDB.query('CONFIG', USERNAME=username).split(',')
     next_cid = str(configDB.get_last_cid() + 1)
     ans = await select('请选择添加配置方式', ['自动导入 配置文件', '手动填写 配置文件', '填写 json 配置文件', '上传 json 配置文件'])
-    while True:
-        if ans == '自动导入 配置文件':
-            cid = str(await input('请输入配置文件编号', NUMBER, required=True))
-            if cid not in config:
-                userDB.update(username, CONFIG=','.join(config+[cid]))
+    if ans == '自动导入 配置文件':
+        cid = str(await input('请输入配置文件编号', NUMBER, required=True))
+        if cid not in config:
+            userDB.update(username, CONFIG=','.join(config+[cid]))
+        run_js('location.reload();')
+    elif ans == '手动填写 配置文件':
+        put_markdown('#### 摆了没做嘻嘻')
+    elif ans == '填写 json 配置文件':
+        inputs = await input_group(
+            label='填写配置文件',
+            inputs=[
+                input("给你的配置取个名", type=TEXT, required=True, name='name'),
+                textarea('config.json', rows=10, code=True, name='cont')
+            ]
+        )
+        try:
+            new_config = dumps(loads(inputs['cont']), indent=4, ensure_ascii=False)
+            configDB.insert(CID=next_cid, NAME=inputs['name'], OWNER=username, DATA=new_config)
+            userDB.update(username, CONFIG=','.join(config+[next_cid]))
             run_js('location.reload();')
-        elif ans == '手动填写 配置文件':
-            put_markdown('#### 摆了没做嘻嘻')
-        elif ans == '填写 json 配置文件':
-            inputs = await input_group(
-                label='填写配置文件',
-                inputs=[
-                    input("给你的配置取个名", type=TEXT, required=True, name='name'),
-                    textarea('config.json', rows=10, code=True, name='cont')
-                ]
-            )
-            try:
-                new_config = dumps(loads(inputs['cont']), indent=4, ensure_ascii=False)
-                configDB.insert(CID=next_cid, NAME=inputs['name'], OWNER=username, DATA=new_config)
-                userDB.update(username, CONFIG=','.join(config+[next_cid]))
-                run_js('location.reload();')
-            except Exception as e:
-                toast(f'配置文件错误：{e}', 3, color='error')
-        elif ans == '上传 json 配置文件':
-            file = await file_upload('上传配置文件，将以文件名作为展示配置名', accept=['.json', '.txt'],max_size='5K', required=True, help_text='请上传不大于 5Kb 以 .json 或 .txt 后缀的文件')
-            try:
-                new_config = dumps(loads(file['content']), indent=4, ensure_ascii=False)
-                configDB.insert(CID=next_cid, NAME=os.path.splitext(file['filename'])[0], OWNER=username, DATA=new_config)
-                userDB.update(username, CONFIG=','.join(config+[next_cid]))
-                run_js('location.reload();')
-            except Exception as e:
-                toast(f'配置文件错误：{e}', 3, color='error')
-        break
+        except Exception as e:
+            toast(f'配置文件错误：{e}', 3, color='error')
+    elif ans == '上传 json 配置文件':
+        file = await file_upload('上传配置文件，将以文件名作为展示配置名', accept=['.json', '.txt'],max_size='5K', required=True, help_text='请上传不大于 5Kb 以 .json 或 .txt 后缀的文件')
+        try:
+            new_config = dumps(loads(file['content']), indent=4, ensure_ascii=False)
+            configDB.insert(CID=next_cid, NAME=os.path.splitext(file['filename'])[0], OWNER=username, DATA=new_config)
+            userDB.update(username, CONFIG=','.join(config+[next_cid]))
+            run_js('location.reload();')
+        except Exception as e:
+            toast(f'配置文件错误：{e}', 3, color='error')
 
 
 async def location(ipv6: str):
@@ -257,7 +254,7 @@ async def main(username: str, ip: str):
 
     while await rac(local.bili.check()) in [-400, -101, -111]:
         await bind()
-    print('123456')
+
     put_column([
         put_row([
             put_image(face, format='png', height='100px').onclick(bind),

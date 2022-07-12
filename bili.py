@@ -6,6 +6,7 @@ from pywebio.output import *
 from pywebio.session import run_asyncio_coroutine as rac, go_app
 from bilibili_api.live import Danmaku, LiveRoom
 from bilibili_api import Credential, user
+from bilibili_api.exceptions import CredentialNoSessdataException
 from logging import DEBUG, Formatter, Logger, StreamHandler
 
 
@@ -102,10 +103,17 @@ class BILI:
         try:
             return await LiveRoom(14703541, self.credential).send_danmaku(Danmaku('check()'))
         except Exception as e:
-            logger.debug(f'{e.code} {e.msg}')
-            if e.code != 10031:
+            print(e, type(e))
+            if isinstance(e, CredentialNoSessdataException):
+                logger.debug('CredentialNoSessdataException')
                 self.uid = None
-            return e.code
+                return -101
+            else:
+                logger.debug(f'{e.code} {e.msg}')
+                if e.code != 10031:
+                    self.uid = None
+                return e.code
+            
 
     async def get_info(self):
         return await user.get_self_info(self.credential)

@@ -1,6 +1,6 @@
 # 😎web-Automatic-Goodnight-Algorithm
 
-基于 Pywebio 的网页版全托管独轮车 [https://api.nana7mi.link/night](https://api.nana7mi.link/night)
+基于 Pywebio 的网页版全托管独轮车 [api.nana7mi.link/night](https://api.nana7mi.link/night)
 
 *修改了外部库 bilibili-api 中 live.py 的部分代码*
 
