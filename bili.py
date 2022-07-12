@@ -14,14 +14,19 @@ logger = Logger('BILI', DEBUG)
 handler = StreamHandler()
 handler.setFormatter(Formatter("`%(asctime)s` `%(levelname)s` `Bili`: %(message)s", '%Y-%m-%d %H:%M:%S'))
 logger.addHandler(handler)
-
+Headers = {
+    'Connection': 'keep-alive',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
+    'Accept-Encoding': 'gzip, deflate',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36'
+}
 
 class BILI:
     url = None
     uid = 0
     running = False
     cookies = {}
-    session = aiohttp.ClientSession()
     credential = None
 
     def __bool__(self):
@@ -29,7 +34,7 @@ class BILI:
 
     def __del__(self):
         if self.session:
-            asyncio.run_coroutine_threadsafe(self.session.close(), asyncio.get_event_loop())
+            asyncio.run_coroutine_threadsafe(self.session.close(), asyncio.new_event_loop())
 
     def __init__(self, uid, cookies):
         self.uid = uid
@@ -49,8 +54,9 @@ class BILI:
         else:
             self.running = True
 
-        session = self.session
-        
+        session = aiohttp.ClientSession(headers=Headers)
+        self.session = session
+
         # 获取 oauthKey 以生成二维码
         r = await rac(session.get('https://passport.bilibili.com/qrcode/getLoginUrl'))
         js = (await rac(r.json()))['data']
@@ -103,7 +109,6 @@ class BILI:
         try:
             return await LiveRoom(14703541, self.credential).send_danmaku(Danmaku('check()'))
         except Exception as e:
-            print(e, type(e))
             if isinstance(e, CredentialNoSessdataException):
                 logger.debug('CredentialNoSessdataException')
                 self.uid = None
