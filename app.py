@@ -56,7 +56,11 @@ async def get_config(username: str):
 
 
 async def new_config(username: str):
-    config = userDB.query('CONFIG', USERNAME=username).split(',')
+    config = userDB.query('CONFIG', USERNAME=username)
+    if not config:
+        config = []
+    else:
+        config = config.split(',')
     next_cid = str(configDB.get_last_cid() + 1)
     ans = await select('请选择添加配置方式', ['自动导入 配置文件', '手动填写 配置文件', '填写 json 配置文件', '上传 json 配置文件'])
     if ans == '自动导入 配置文件':
