@@ -1,4 +1,6 @@
-# 😎web-Automatic-Goodnight-Algorithm
+# 已基于 Vue3 重构 [night.nana7mi.link](https://night.nana7mi.link)
+
+### 😎web-Automatic-Goodnight-Algorithm
 
 基于 Pywebio 的网页版全托管独轮车 [api.nana7mi.link/night](https://api.nana7mi.link/night)
 
